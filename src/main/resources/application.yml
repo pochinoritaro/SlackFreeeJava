@@ -1,0 +1,12 @@
+spring:
+    application:
+        name: slack
+
+logging.level:
+  com:
+    slack:
+      api: DEBUG
+      api.bolt: DEBUG
+
+server:
+  port: 3000
