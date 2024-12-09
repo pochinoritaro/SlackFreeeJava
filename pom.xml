@@ -36,16 +36,32 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 
+		<!-- SpringJPA -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+
+		<!-- PostgreSQL JDBC ドライバ -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.6.0</version> <!-- 使用するPostgreSQLのバージョンに合わせてください -->
+		</dependency>
+		
+		<!-- Lombok -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- Bolt for Java -->
 		<dependency>
 			<groupId>com.slack.api</groupId>
 			<artifactId>bolt</artifactId>
@@ -59,8 +75,9 @@
 		<dependency>
 			<groupId>com.slack.api</groupId>
 			<artifactId>bolt-jakarta-servlet</artifactId>
-			<version>1.18.0</version> <!-- 使用するバージョンを指定 -->
+			<version>1.18.0</version>
 		</dependency>
+
 	</dependencies>
 
 	<build>
