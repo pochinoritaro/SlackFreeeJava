@@ -5,6 +5,8 @@ import com.slack.api.bolt.context.builtin.SlashCommandContext;
 import com.slack.api.bolt.request.builtin.SlashCommandRequest;
 import com.slack.api.bolt.response.Response;
 import com.slack.api.methods.response.views.ViewsOpenResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.slack.api.model.view.View;
 
@@ -17,10 +19,11 @@ import java.time.LocalDate;
 
 @Component
 public class PaidHolidayRequestCommand extends ModalCommand<PaidHolidayRequestCallback> {
-    public PaidHolidayRequestCommand() {
+    @Autowired
+    public PaidHolidayRequestCommand(PaidHolidayRequestCallback paidHolidayRequestCallback) {
         this.commandName = "/modal";
         this.callBackId = "paidHolidayRequest";
-        this.callBack = new PaidHolidayRequestCallback();
+        this.callBack = paidHolidayRequestCallback;
     }
 
     @Override
