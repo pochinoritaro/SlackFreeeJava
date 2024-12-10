@@ -8,14 +8,23 @@ import com.slack.api.bolt.App;
 import com.slack.api.bolt.AppConfig;
 
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.slf4j.Logger;
 
 @Configuration
+@ComponentScan("com.bot.slack")
 public class SlackApp {
 
     private static final Logger logger = LoggerFactory.getLogger(SlackApp.class);
+
+    @Autowired
+    private List<BasicCommand> basicCommands;
+
+    @Autowired
+    private List<ModalCommand<? extends CommandCallback>> modalCommands;
 
     // If you would like to run this app for a single workspace,
     // enabling this Bean factory should work for you.
@@ -43,7 +52,7 @@ public class SlackApp {
     }
 
     @Bean
-    public App initSlackApp(AppConfig config, List<BasicCommand> basicCommands, List<ModalCommand<? extends CommandCallback>> modalCommands) {
+    public App initSlackApp(AppConfig config) {
         App app = new App(config);
         if (config.getClientId() != null) {
             app.asOAuthApp(true);
@@ -67,7 +76,6 @@ public class SlackApp {
                     String.format("The callback for command %s has been registered. Callback ID: %s", command.getCommandName(), command.getCallbackId())));
             }
         });
-
         
         return app;
     }
