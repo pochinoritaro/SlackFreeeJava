@@ -1,14 +1,22 @@
 package com.bot.slack.command.paidholiday.request;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.bot.slack.command.base.CommandCallback;
+import com.bot.slack.entity.paidholiday.HolidayRquestStatus;
+import com.bot.slack.entity.paidholiday.PaidHoliday;
 import com.bot.slack.entity.user.AppUser;
 import com.bot.slack.service.AppUserService;
+import com.bot.slack.service.PaidHolidayService;
 import com.slack.api.bolt.context.builtin.ViewSubmissionContext;
 import com.slack.api.bolt.request.builtin.ViewSubmissionRequest;
 import com.slack.api.bolt.response.Response;
@@ -22,7 +30,10 @@ import com.slack.api.model.view.ViewState.Value;
 public class PaidHolidayRequestCallback extends CommandCallback {
 
     @Autowired
-    AppUserService appUserService;
+    private AppUserService appUserService;
+
+    @Autowired
+    private PaidHolidayService paidHolidayService;
 
     public Response handle(ViewSubmissionRequest req, ViewSubmissionContext ctx) {
         ctx.logger.info("/modal command start.");
@@ -50,10 +61,20 @@ public class PaidHolidayRequestCallback extends CommandCallback {
         System.out.println(userData.get());
 
         Map<String, Map<String, Value>> requestValues = req.getPayload().getView().getState().getValues();
-        Value requestDate = requestValues.get("requestDate").get("date");
-        Value requestReason = requestValues.get("requestReason").get("reason");
-        System.out.println(requestDate.getSelectedDate());
-        System.out.println(requestReason.getValue());
+        Optional<LocalDateTime> requestDate = convertLocalDateTime(requestValues.get("requestDate").get("date").getSelectedDate());
+        String requestReason = requestValues.get("requestReason").get("reason").getValue();
+
+        if (requestDate.isEmpty()) {
+            ctx.logger.error("Failed to parse LocalDateTime.");
+            return ctx.ack();
+        } 
+
+        Optional<PaidHoliday> paidHoliday = setPaidHolidayOnDB(userData.get(), requestDate.get(), requestReason);
+        paidHoliday.ifPresentOrElse(
+            value -> ctx.logger.info("Data insertion was successful."),
+            () -> ctx.logger.error("Failed to insert data.")
+        );
+
         ctx.logger.info("/modal command end.");
         return ctx.ack();
     }
@@ -82,5 +103,37 @@ public class PaidHolidayRequestCallback extends CommandCallback {
         userData.setEmployeeId(employeeId);
         userData.setEmail(userEmail);
         return Optional.of(appUserService.createUser(userData));
+    }
+
+    private Optional<PaidHoliday> setPaidHolidayOnDB(AppUser userData, LocalDateTime requestDate, String requestReason) {
+        PaidHoliday paidHoliday = new PaidHoliday();
+        paidHoliday.setAppUser(userData);
+        paidHoliday.setRequestDate(requestDate);
+        paidHoliday.setRequestReason(requestReason);
+        paidHoliday.setRequestStatus(HolidayRquestStatus.PENDING);
+        //TODO: 作成日を自動挿入できるようにする。
+        paidHoliday.setCreateAt(LocalDateTime.now());
+        //TODO: 更新日を自動挿入できるようにする。
+        paidHoliday.setUpdateAt(LocalDateTime.now());
+        return Optional.of(paidHolidayService.createPaidHoliday(paidHoliday));
+    }
+
+    private Optional<LocalDateTime> convertLocalDateTime(String date) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date formatDate = null;
+        try {
+            formatDate = dateFormat.parse(date);
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+
+        if (formatDate != null) {
+            return Optional.ofNullable(LocalDateTime.ofInstant(formatDate.toInstant(), ZoneId.systemDefault()));
+
+        } else {
+            return Optional.empty();
+        }
     }
 }
