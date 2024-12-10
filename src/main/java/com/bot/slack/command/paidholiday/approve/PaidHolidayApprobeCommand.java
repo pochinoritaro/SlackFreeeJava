@@ -1,10 +1,14 @@
 package com.bot.slack.command.paidholiday.approve;
 
 import com.bot.slack.command.base.ModalCommand;
+import com.bot.slack.entity.paidholiday.HolidayRquestStatus;
+import com.bot.slack.service.PaidHolidayService;
 import com.slack.api.bolt.context.builtin.SlashCommandContext;
 import com.slack.api.bolt.request.builtin.SlashCommandRequest;
 import com.slack.api.bolt.response.Response;
 import com.slack.api.methods.response.views.ViewsOpenResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.slack.api.model.block.Blocks;
 import com.slack.api.model.block.composition.BlockCompositions;
@@ -14,16 +18,19 @@ import com.slack.api.model.block.element.CheckboxesElement;
 import com.slack.api.model.view.View;
 import static com.slack.api.model.block.Blocks.*;
 import static com.slack.api.model.view.Views.*;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Component
 public class PaidHolidayApprobeCommand extends ModalCommand {
+
+    @Autowired
+    private PaidHolidayService paidHolidayService;
+
     public PaidHolidayApprobeCommand() {
-        this.commandName = "/approbe";
+        this.commandName = "/approve";
         this.callBackId = "paidHolidayApprobe";
     }
 
@@ -50,6 +57,9 @@ public class PaidHolidayApprobeCommand extends ModalCommand {
     @Override
     protected View createView(SlashCommandRequest req, SlashCommandContext ctx) {
         RequestUserBuilder users = new RequestUserBuilder();
+        List<OptionObject> holidayOptions = paidHolidayService.getAllHolidayRequestByStatus(HolidayRquestStatus.PENDING).stream()
+            .map(d -> users.buildOption(d.getRequestDate().toString(), d.getAppUser().getRealName(), d.getRequestReason(), d.getId()))
+                .collect(Collectors.toList());
 
         return view(view -> view
             .callbackId(getCallbackId())
@@ -63,7 +73,7 @@ public class PaidHolidayApprobeCommand extends ModalCommand {
                     .elements(Arrays.asList(
                         CheckboxesElement.builder()
                             .actionId("requestUsers")
-                            .options(users.buildOptions()).build()
+                            .options(holidayOptions).build()
                             )
                         )
                     )
@@ -75,39 +85,22 @@ public class PaidHolidayApprobeCommand extends ModalCommand {
 
 class RequestUserBuilder {
 
-    private OptionObject buildOption(String requestDate, String userName, int index) {
-        StringBuilder dateTemp = new StringBuilder().append("取得申請日: ");
-        StringBuilder userTemp = new StringBuilder().append("申請者: ");
-        dateTemp.append(requestDate);
-        userTemp.append(userName);
-
+    public OptionObject buildOption(String requestDate, String realName, String requestReason, long index) {
         return BlockCompositions.option(o -> o
                 .text(PlainTextObject.builder()
-                        .text(dateTemp.toString())
+                        .text(
+                            String.format(
+                                        "取得申請日: %s", 
+                                        requestDate)
+                        )
                         .emoji(true)
                         .build())
+
                 .description(PlainTextObject.builder()
-                        .text(userTemp.toString())
+                        .text(String.format("申請者 :%s\n申請理由: %s", 
+                                realName, requestReason))
                         .emoji(true)
                         .build())
                 .value(String.valueOf(index)));
-    }
-
-    public List<OptionObject> buildOptions() {
-        String[] users = new String[4];
-        String date = "2024/12/03";
-        List<OptionObject> options = new ArrayList<>();
-
-        users[0] = "田中";
-        users[1] = "サトウ";
-        users[2] = "高橋";
-        users[3] = "角森";
-
-        int index = 0;
-        for (String user : users) {
-            options.add(buildOption(date, user, index));
-            index++;
-        }
-        return options;
     }
 }
