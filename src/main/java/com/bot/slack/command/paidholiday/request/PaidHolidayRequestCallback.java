@@ -54,7 +54,8 @@ public class PaidHolidayRequestCallback extends CommandCallback {
             
             String employeeId = "123456789";
             String userEmail = slackUser.get().getUser().getProfile().getEmail();
-            userData = setUserOnDB(userId, employeeId, userEmail);
+            String realName = slackUser.get().getUser().getProfile().getRealName();
+            userData = setUserOnDB(userId, employeeId, userEmail, realName);
             ctx.logger.info("User data has been successfully registered.");
         }
 
@@ -97,11 +98,12 @@ public class PaidHolidayRequestCallback extends CommandCallback {
     }
 
 
-    private Optional<AppUser> setUserOnDB(String slackId, String employeeId, String userEmail) {
+    private Optional<AppUser> setUserOnDB(String slackId, String employeeId, String userEmail, String displayName) {
         AppUser userData = new AppUser();
         userData.setSlackId(slackId);
         userData.setEmployeeId(employeeId);
         userData.setEmail(userEmail);
+        userData.setRealName(displayName);
         return Optional.of(appUserService.createUser(userData));
     }
 
