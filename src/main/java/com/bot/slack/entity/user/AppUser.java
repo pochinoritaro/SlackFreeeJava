@@ -34,6 +34,8 @@ public class AppUser {
 
     private String employeeId;
 
+    private String realName;
+
     private String email;
 
     @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL, orphanRemoval = true)
